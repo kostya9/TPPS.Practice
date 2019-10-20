@@ -93,7 +93,3 @@ let ShouldBeCompleted_AfterTwoIterations_WithThreeCountriesInRow () =
     let completed = Diffusion.checkCompleteness grid completed 3 2
     
     Assert.True(completed.IsFullyCompleted)
-    
-    
-    
-    

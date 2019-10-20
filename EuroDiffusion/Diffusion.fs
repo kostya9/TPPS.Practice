@@ -108,10 +108,4 @@ let checkCompleteness (grid: City option list list) (prevState: GridCompleteStat
     {Cities = cities; IsFullyCompleted = isFullyCompleted}
 
 let getInitialCompleteness (grid: City option list list) countriesNumber =
-    checkCompleteness grid {Cities = []; IsFullyCompleted = false} countriesNumber 0
-
-
-    
-                
-            
-                
+    checkCompleteness grid {Cities = []; IsFullyCompleted = false} countriesNumber 0  
