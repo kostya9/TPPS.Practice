@@ -8,6 +8,9 @@
     <ItemGroup>
         <Compile Include="Diffusion.fs" />
         <Compile Include="Program.fs" />
+        <Content Include="cases.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>
