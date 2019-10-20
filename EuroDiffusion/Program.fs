@@ -27,8 +27,8 @@ let run countries =
     
     let iterationByCountry =
         completeness.Cities
-        |> Seq.groupBy (fun c -> c.Item.Country)
-        |> Seq.map(fun t -> fst t, Seq.maxBy (fun (c: Diffusion.StateOfComplete<Diffusion.City>) -> c.Iteration) (snd t))
+        |> Seq.groupBy (fun c -> c.City.Country)
+        |> Seq.map(fun t -> fst t, Seq.maxBy (fun (c: Diffusion.CityCompleteState) -> c.Iteration) (snd t))
         |> Seq.sortBy (fun s -> (fst s).Name)
         |> Seq.sortBy (fun s -> (snd s).Iteration)
         

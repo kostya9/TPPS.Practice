@@ -88,19 +88,19 @@ let updateCurrencies (grid: City option list list) =
     List.mapi (fun y r -> List.mapi (fun x c -> cityWithUpdatedBudget grid x y) grid.[y]) grid
     
     
-type StateOfComplete<'T> = {Item: 'T; Iteration: int}
-type GridCompleteState = {Cities: seq<StateOfComplete<City>>; IsFullyCompleted: bool }
+type CityCompleteState = {City: City; Iteration: int}
+type GridCompleteState = {Cities: seq<CityCompleteState>; IsFullyCompleted: bool }
 
 let checkCompleteness (grid: City option list list) (prevState: GridCompleteState) countriesNumber iteration =
     let mutable isFullyCompleted = true
     let cities = [|
         for row in grid do
             for city in Seq.choose id row do
-                match Seq.tryFind (fun c -> c.Item.X = city.X && c.Item.Y = city.Y) prevState.Cities with
+                match Seq.tryFind (fun c -> c.City.X = city.X && c.City.Y = city.Y) prevState.Cities with
                 | Some(state) -> yield state
                 | None ->
                     if Seq.length city.Money = countriesNumber then
-                        yield {Item = city; Iteration = iteration}
+                        yield {City = city; Iteration = iteration}
                     else
                         isFullyCompleted <- false
     |]
