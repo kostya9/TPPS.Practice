@@ -70,15 +70,17 @@ let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int
         let cityMoneyMinusRepresentatives =
             city.Money
             |> Seq.map (fun c -> {Country = c.Country; Amount = c.Amount - Seq.length neighbors * (c.Amount/1000)})
-             
-        let updatedMoney =
+            
+        let moneyFromNeighborRepresentatives =
             neighbors
             |> Seq.map neighborToRepresentation
             |> Seq.collect (fun c -> c)
+             
+        let updatedMoney =
+            moneyFromNeighborRepresentatives
             |> Seq.append cityMoneyMinusRepresentatives
             |> Seq.groupBy (fun c -> c.Country)
-            |> Seq.map (fun c -> snd c)
-            |> Seq.map (fun c -> {Country = (Seq.head c).Country; Amount = Seq.sumBy (fun c -> c.Amount) c})
+            |> Seq.map (fun c -> {Country = fst c; Amount = snd c |> Seq.sumBy (fun c -> c.Amount)})
             |> Seq.filter (fun c -> c.Amount > 0)
         
         Some ({city with Money = Seq.toArray updatedMoney })
