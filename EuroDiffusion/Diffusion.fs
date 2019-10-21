@@ -12,9 +12,9 @@ type Result<'T> =
     
 let private validateCoordinatesRange x y =
     match (x, y) with
-    | (x, y) when x < 1 || x > 10 -> Error("Expected x to be in range of 1..10")
-    | (x, y) when y < 1 || y > 10 -> Error("Expected y to be in range of 1..10")
-    | (x, y) -> Success()
+    | (x, _) when x < 1 || x > 10 -> Error("Expected x to be in range of 1..10")
+    | (_, y) when y < 1 || y > 10 -> Error("Expected y to be in range of 1..10")
+    | (_, _) -> Success()
 
 let private validateCoordinates xBot yBot xTop yTop =
     let validatedBot = validateCoordinatesRange xBot yBot
@@ -48,12 +48,16 @@ let createSimulationGrid cities =
         
     [for y in 1..10 -> [for x in 1..10 -> findCity x y]]
     
+    
+let private representativeFactor = 1_000
+
 let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int) =
+    
     match grid.[y].[x] with
     | Some city ->
         
         let neighborToRepresentation neighbor =
-            Seq.map (fun (m: MotifCoins) -> {Country = m.Country; Amount = m.Amount / 1000}) neighbor.Money
+            Seq.map (fun (m: MotifCoins) -> {Country = m.Country; Amount = m.Amount / representativeFactor}) neighbor.Money
             
         let neighbors =
                   seq {
@@ -69,7 +73,7 @@ let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int
 
         let cityMoneyMinusRepresentatives =
             city.Money
-            |> Seq.map (fun c -> {Country = c.Country; Amount = c.Amount - Seq.length neighbors * (c.Amount/1000)})
+            |> Seq.map (fun c -> {Country = c.Country; Amount = c.Amount - Seq.length neighbors * (c.Amount/representativeFactor)})
             
         let moneyFromNeighborRepresentatives =
             neighbors
@@ -87,7 +91,7 @@ let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int
     | None -> None
     
 let updateCurrencies (grid: City option list list) =
-    List.mapi (fun y r -> List.mapi (fun x c -> cityWithUpdatedBudget grid x y) grid.[y]) grid
+    List.mapi (fun y row -> List.mapi (fun x _ -> cityWithUpdatedBudget grid x y) row) grid
     
     
 type CityCompleteState = {City: City; Iteration: int}
