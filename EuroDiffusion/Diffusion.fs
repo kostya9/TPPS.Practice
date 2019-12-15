@@ -106,7 +106,13 @@ let updateCurrencies (grid: City option list list) =
     List.mapi (fun y row -> List.mapi (fun x _ -> cityWithUpdatedBudget grid x y) row) grid
     
 let moneyCompare moneyLeft moneyRight =
-    Seq.compareWith (fun (l: MotifCoins) r -> if l.Country = r.Country && l.Amount = r.Amount then 0 else -1) moneyLeft moneyRight = 0
+    let comparison =
+        Seq.compareWith
+            (fun (l: MotifCoins) r -> if l.Country = r.Country
+                                         && l.Amount = r.Amount
+                                         then 0
+                                         else -1) moneyLeft moneyRight
+    comparison = 0
     
 let cityCompare cityLeft cityRight =
     match (cityLeft, cityRight) with
@@ -118,7 +124,12 @@ let cityCompare cityLeft cityRight =
     | _ -> 0
     
 let gridEquals (gridLeft: City option list list) (gridRight: City option list list) =
-    Seq.compareWith (fun el1 el2 -> if (Seq.compareWith cityCompare el1 el2) = 0 then 0 else -1) gridLeft gridRight = 0
+    let comparison =
+        Seq.compareWith
+            (fun el1 el2 -> if (Seq.compareWith cityCompare el1 el2) = 0
+                            then 0
+                            else -1) gridLeft gridRight
+    comparison = 0
      
 type CityCompleteState = {City: City; Iteration: int}
 type GridCompleteState = {Cities: CityCompleteState[]; IsFullyCompleted: bool }
