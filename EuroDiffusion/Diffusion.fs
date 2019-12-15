@@ -58,7 +58,7 @@ let createSimulationGrid cities =
     
 let private representativeFactor = 1_000
 
-let private generateNeighbors grid x y =
+let private getNeighbors grid x y =
     seq {
           // Try out each direction to see if that is a valid neighbor
           let directions = [0,1; 0,-1;1,0;-1,0] 
@@ -80,7 +80,7 @@ let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int
         let neighborToRepresentation neighbor =
             Seq.map (fun (m: MotifCoins) -> {Country = m.Country; Amount = m.Amount / representativeFactor}) neighbor.Money
             
-        let neighbors = generateNeighbors grid x y
+        let neighbors = getNeighbors grid x y
 
         let cityMoneyMinusRepresentatives =
             city.Money
