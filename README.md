@@ -5,3 +5,5 @@
 cd EuroDiffusion
 dotnet run cases.txt
 ```
+
+## .Net Core 2.2 SDK is required to build the app
