@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Result.fs" />
         <Compile Include="Diffusion.fs" />
         <Compile Include="Program.fs" />
         <Content Include="cases.txt">

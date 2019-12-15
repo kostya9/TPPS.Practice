@@ -1,39 +1,48 @@
 ﻿open System
 open System.IO
 open EuroDiffusion
+open EuroDiffusion.Diffusion
+open Result
+
+let runIterations countries initialGrid =
+    let mutable grid = initialGrid
+    let mutable iteration = 0
+    let mutable completeness = Diffusion.getInitialCompleteness grid (Seq.length countries)
+    let mutable stuck = false
+    
+    while not completeness.IsFullyCompleted && not stuck do
+        iteration <- iteration + 1
+        let prevGrid = grid
+        grid <- Diffusion.updateCurrencies grid
+        
+        if (Diffusion.gridEquals prevGrid grid) then
+            stuck <- true
+        else
+            completeness <- Diffusion.checkCompleteness grid completeness (Seq.length countries) iteration
+            
+    if stuck then Result.Error("The simulation is stuck, please check the input") else Result.Success(completeness)
+    
+let displayResult completenessResult =
+    match completenessResult with
+    | Error(errorMsg) -> Console.WriteLine("Could not complete simulation due to error: {0}", errorMsg)
+    | Success(completeness: GridCompleteState) ->
+        let iterationByCountry =
+            completeness.Cities
+            |> Seq.groupBy (fun c -> c.City.Country)
+            |> Seq.map(fun (country, completion) -> country, Seq.maxBy (fun (c: Diffusion.CityCompleteState) -> c.Iteration) completion)
+            |> Seq.sortBy (fun (country, lastCity) -> lastCity.Iteration, country.Name)
+                    
+        for (country, iteration) in iterationByCountry do
+            Console.WriteLine("[" + country.Name + "]: " + string iteration.Iteration)
 
 let run countries =
-    let countries =
-        [|for c in countries do
-            match c with
-            | Diffusion.Success(country) -> yield country
-            | Diffusion.Error(e) ->
-                failwith e
-                |]
-        
-    let mutable grid =
-        countries
+    countries
         |> Seq.map Diffusion.generateCitiesFromCountry
         |> Seq.collect (fun c -> c)
         |> Diffusion.createSimulationGrid
-        
-    let mutable iteration = 0
-    let mutable completeness = Diffusion.getInitialCompleteness grid (Seq.length countries)
-    
-    while not completeness.IsFullyCompleted do
-        iteration <- iteration + 1
-        grid <- Diffusion.updateCurrencies grid
-        completeness <- Diffusion.checkCompleteness grid completeness (Seq.length countries) iteration
-    
-    let iterationByCountry =
-        completeness.Cities
-        |> Seq.groupBy (fun c -> c.City.Country)
-        |> Seq.map(fun t -> fst t, Seq.maxBy (fun (c: Diffusion.CityCompleteState) -> c.Iteration) (snd t))
-        |> Seq.sortBy (fun s -> (fst s).Name)
-        |> Seq.sortBy (fun s -> (snd s).Iteration)
-        
-    for (country, iteration) in iterationByCountry do
-        Console.WriteLine("[" + country.Name + "]: " + string iteration.Iteration)
+        |> Result.bind (runIterations countries)
+        |> displayResult
+            
 
 let getInput (argv: string[]) =
     if Seq.length argv = 0 then
@@ -41,17 +50,17 @@ let getInput (argv: string[]) =
     else
         let file = System.IO.File.OpenRead(argv.[0])
         new StreamReader(file) :> TextReader 
-        
 
-let extractTestCasesFromInput (input: TextReader) =         
-    seq {
-        let mutable countriesNumber = input.ReadLine() |> int
-        let mutable testCase = 1
-        while countriesNumber <> 0 do
-            if countriesNumber < 1 || countriesNumber > 20 then
-                failwith "Expected countries count to be between 1 and 20"
-            
-            yield testCase, [
+let readCase (input: TextReader) =
+    try
+        let countriesNumber = input.ReadLine() |> int
+    
+        if countriesNumber = 0 then
+            Result.Success(None)
+        else if countriesNumber < 1 || countriesNumber > 20 then
+            Result.Error("Expected countries count to be between 1 and 20")
+        else
+            let countries = [|
                 for _ in [1..countriesNumber] do
                     let countryInfo = input.ReadLine()
                     let splitInfo = countryInfo.Split(" ")
@@ -60,19 +69,36 @@ let extractTestCasesFromInput (input: TextReader) =
                     let yTop = splitInfo.[2] |> int
                     let xBot = splitInfo.[3] |> int
                     let yBot = splitInfo.[4] |> int
-                    yield Diffusion.createCountry name xTop yTop xBot yBot
-            ]
+                    yield Diffusion.createCountry name xTop yTop xBot yBot|]
             
-            countriesNumber <- input.ReadLine() |> int
-            testCase <- testCase + 1
-    }
+            // If at least one country is invalid -> disregard all countries
+            match Seq.tryFind Result.isError countries with
+            | Some(Result.Error(e)) -> Result.Error(e)
+            | None -> Result.Success(Some(Array.choose chooseSuccess countries))
+            | _ -> Result.Error("Unexpected Some(Success)")
+    with
+        | e -> Result.Error("Input format for the test case was incorrect")
+
+let extractTestCasesFromInput (input: TextReader) =
+    Seq.initInfinite (fun c -> c)
+    |> Seq.takeWhile (fun _ -> input.Peek() <> -1)
+    |> Seq.map (fun _ -> readCase input)
+    |> Seq.takeWhile isSomeOrError
+    |> Seq.choose Result.chooseSomeOrError
+    |> Seq.mapi (fun i c -> (i + 1, c))
+    |> Seq.toArray
+         
 
 [<EntryPoint>]
 let main argv =
     
     use input = getInput argv
-    for (case, countries) in extractTestCasesFromInput input do
-        Console.WriteLine("Case Number " + string case)
-        run countries
+    for (caseNumber, case) in extractTestCasesFromInput input do
+        Console.WriteLine("Case Number " + string caseNumber)
+        match case with
+        | Result.Success(countries) ->
+            run countries
+        | Result.Error(e) ->
+            Console.WriteLine("Could not run case due to error: {0}", e)
 
     0

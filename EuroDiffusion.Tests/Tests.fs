@@ -1,7 +1,7 @@
 module EuroDiffusion.Tests
 
 open EuroDiffusion
-
+open Result
 open NUnit.Framework
 open EuroDiffusion.Diffusion
 [<SetUp>]
@@ -17,16 +17,21 @@ let createGrid countries =
     let countries =
         [|for c in countries do
             match c with
-            | Diffusion.Success(country) -> yield country
-            | Diffusion.Error(e) ->
+            | Result.Success(country) -> yield country
+            | Result.Error(e) ->
                 Assert.Fail(e)
                 |]
     
     
-    countries, countries
-        |> Seq.map Diffusion.generateCitiesFromCountry
-        |> Seq.collect (fun c -> c)
-        |> Diffusion.createSimulationGrid
+    let grid = countries
+                |> Seq.map Diffusion.generateCitiesFromCountry
+                |> Seq.collect (fun c -> c)
+                |> Diffusion.createSimulationGrid
+     
+    match grid with
+    | Result.Error(e) -> failwith e
+    | Result.Success(g) -> (countries, g)
+     
 
 [<Test>]
 let ShouldUpdateMoney_OfVerticalAdjacentCities () =
