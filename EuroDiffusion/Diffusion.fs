@@ -122,14 +122,15 @@ let private cityEquals cityLeft cityRight =
     | (Some(cityLeft), Some(cityRight)) -> if cityLeft.X = cityRight.X
                                               && cityLeft.Y = cityRight.Y
                                               && (moneyEquals cityLeft.Money cityRight.Money)
-                                              then 0
-                                              else -1 
-    | _ -> 0
+                                              then true
+                                              else false
+    | _ -> true
     
+// Used to check if the grid did not change from iteration to iteration
 let gridEquals (gridLeft: City option list list) (gridRight: City option list list) =
     let comparison =
         Seq.compareWith
-            (fun el1 el2 -> if (Seq.compareWith cityEquals el1 el2) = 0
+            (fun el1 el2 -> if (Seq.forall2 cityEquals el1 el2)
                             then 0
                             else -1) gridLeft gridRight
     comparison = 0
