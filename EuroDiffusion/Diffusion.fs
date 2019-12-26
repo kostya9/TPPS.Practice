@@ -27,7 +27,8 @@ let private validateCoordinates xBot yBot xTop yTop =
 let createCountry name xTop yTop xBot yBot =
     let validationResult = validateCoordinates xTop yTop xBot yBot
     
-    if Seq.length name > 25 then
+    let maxNameSize = 25
+    if Seq.length name > maxNameSize then
         Result.Error("Expected country name to be shorter than 25 characters")
     else
         match validationResult with
@@ -35,9 +36,10 @@ let createCountry name xTop yTop xBot yBot =
         | Result.Error(msg) -> Result.Error(msg)
 
 let generateCitiesFromCountry country =
+    let startingAmount = 1_000_000
     seq { for x in country.XTop .. country.XBot do
             for y in country.YTop .. country.YBot do
-              yield {X = x; Y = y; Country = country; Money = [|{Amount = 1_000_000; Country = country}|]}
+              yield {X = x; Y = y; Country = country; Money = [|{Amount = startingAmount; Country = country}|]}
         }
 
 let createSimulationGrid cities =
@@ -54,9 +56,6 @@ let createSimulationGrid cities =
             Seq.tryFind (function c -> c.X = x && c.Y = y) cities
             
         Result.Success([for y in 1..10 -> [for x in 1..10 -> findCity x y]])
-    
-    
-let private representativeFactor = 1_000
 
 let private getNeighbors grid x y =
     seq {
@@ -73,9 +72,9 @@ let private getNeighbors grid x y =
       |> Seq.toArray
 
 let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int) =
-    
     match grid.[y].[x] with
     | Some city ->
+        let representativeFactor = 1_000
         
         let neighborToRepresentation neighbor =
             Seq.map (fun (m: MotifCoins) -> {Country = m.Country; Amount = m.Amount / representativeFactor}) neighbor.Money
