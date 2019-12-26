@@ -97,7 +97,10 @@ let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int
             |> Seq.groupBy (fun c -> c.Country)
             |> Seq.map (fun c -> {Country = fst c; Amount = snd c |> Seq.sumBy (fun c -> c.Amount)})
             |> Seq.filter (fun c -> c.Amount > 0)
-            |> Seq.sortBy (fun m -> m.Country.Name)
+            |> Seq.sortBy (fun m -> m.Country.Name) (* Sort is performed to be able to compare cities.
+                                                       Motifs will be in the same order, which will enable
+                                                       to compare them one by one. This is done to ensure that grid doesn't get stuck.
+                                                    *)
         
         Some ({city with Money = Seq.toArray updatedMoney })
     | None -> None
@@ -105,7 +108,7 @@ let private cityWithUpdatedBudget (grid: City option list list) (x: int) (y: int
 let updateCurrencies (grid: City option list list) =
     List.mapi (fun y row -> List.mapi (fun x _ -> cityWithUpdatedBudget grid x y) row) grid
     
-let moneyCompare moneyLeft moneyRight =
+let private moneyEquals moneyLeft moneyRight =
     let comparison =
         Seq.compareWith
             (fun (l: MotifCoins) r -> if l.Country = r.Country
@@ -114,11 +117,11 @@ let moneyCompare moneyLeft moneyRight =
                                          else -1) moneyLeft moneyRight
     comparison = 0
     
-let cityCompare cityLeft cityRight =
+let private cityEquals cityLeft cityRight =
     match (cityLeft, cityRight) with
     | (Some(cityLeft), Some(cityRight)) -> if cityLeft.X = cityRight.X
                                               && cityLeft.Y = cityRight.Y
-                                              && (moneyCompare cityLeft.Money cityRight.Money)
+                                              && (moneyEquals cityLeft.Money cityRight.Money)
                                               then 0
                                               else -1 
     | _ -> 0
@@ -126,7 +129,7 @@ let cityCompare cityLeft cityRight =
 let gridEquals (gridLeft: City option list list) (gridRight: City option list list) =
     let comparison =
         Seq.compareWith
-            (fun el1 el2 -> if (Seq.compareWith cityCompare el1 el2) = 0
+            (fun el1 el2 -> if (Seq.compareWith cityEquals el1 el2) = 0
                             then 0
                             else -1) gridLeft gridRight
     comparison = 0
